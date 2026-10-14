@@ -68,6 +68,5 @@ Incluyen los dos casos del Anexo A, casos límite (estado pozo, estados inalcanz
 
 ## Integrantes
 
-- (nombre 1)
-- (nombre 2)
-- (nombre 3)
+-Harold Danilo Tuquerres
+-Jhoan Santiago Camayo 
