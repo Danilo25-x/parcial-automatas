@@ -99,10 +99,12 @@ class PestanaConversion(ttk.Frame):
             entrada = ttk.Entry(marco, width=26)
             entrada.grid(row=fila, column=1, padx=4, pady=2)
             self.campos[clave] = entrada
-        ttk.Label(marco, text="Transiciones: origen,símbolo,destino (una por línea)").grid(
+        ttk.Label(marco, text="Transiciones: origen,símbolo,destino").grid(
             row=0, column=2, sticky="w", padx=10)
         self.transiciones = tk.Text(marco, width=32, height=5, font=FUENTE_TEXTO)
         self.transiciones.grid(row=1, column=2, rowspan=3, padx=10, pady=2)
+        ttk.Label(marco, text="Una por línea. ε (o eps) = transición vacía",
+                  foreground="gray").grid(row=4, column=2, sticky="w", padx=10)
 
         botones = ttk.Frame(marco)
         botones.grid(row=0, column=3, rowspan=4, padx=10)

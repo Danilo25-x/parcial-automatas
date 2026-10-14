@@ -10,7 +10,7 @@ Cada estado genera una ecuación:  p = r1·q1 + r2·q2 + ... + c
 
 import re
 
-from .modelo import estados_alcanzables, estados_que_llegan_a_final
+from .modelo import EPS, estados_alcanzables, estados_que_llegan_a_final
 
 LAMBDA = "λ"
 VACIO = "∅"
@@ -121,10 +121,11 @@ def _plantear(automata, estados):
     for p in estados:
         terminos = {}
         cuenta = 0
-        for simbolo in automata["alfabeto"]:
+        for simbolo in automata["alfabeto"] + [EPS]:
+            coeficiente = LAMBDA if simbolo == EPS else simbolo   # ε equivale a λ
             for destino in automata["transiciones"].get((p, simbolo), []):
                 if destino in estados:
-                    terminos[destino] = unir(terminos.get(destino), simbolo)
+                    terminos[destino] = unir(terminos.get(destino), coeficiente)
                     cuenta += 1
         es_final = p in automata["finales"]
         ecuaciones[p] = {"terminos": terminos,

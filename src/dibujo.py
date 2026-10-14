@@ -112,21 +112,22 @@ def _bucle(canvas, centro, nombre, texto, color, grosor):
     canvas.create_text(x, arriba - 46, text=texto, fill=color, font=FUENTE)
 
 
-def _flecha(canvas, posiciones, origen, destino, texto, curva, color, grosor):
+def _flecha(canvas, posiciones, origen, destino, texto, desviacion, color, grosor):
     (x1, y1), (x2, y2) = posiciones[origen], posiciones[destino]
     r1 = (radio_horizontal(origen), ALTO)
     r2 = (radio_horizontal(destino), ALTO)
     largo = math.hypot(x2 - x1, y2 - y1)
     nx, ny = -(y2 - y1) / largo, (x2 - x1) / largo      # perpendicular
-    if curva:
-        ctrl = ((x1 + x2) / 2 + nx * 45, (y1 + y2) / 2 + ny * 45)
+    if desviacion:
+        ctrl = ((x1 + x2) / 2 + nx * desviacion, (y1 + y2) / 2 + ny * desviacion)
         ini = _borde((x1, y1), *r1, ctrl)
         fin = _borde((x2, y2), *r2, ctrl)
         canvas.create_line(*ini, *ctrl, *fin, smooth=True, arrow="last",
                            fill=color, width=grosor)
         medio = (0.25 * ini[0] + 0.5 * ctrl[0] + 0.25 * fin[0],
                  0.25 * ini[1] + 0.5 * ctrl[1] + 0.25 * fin[1])
-        etiqueta = (medio[0] + nx * 10, medio[1] + ny * 10)
+        separacion = 18 if desviacion >= 100 else 10
+        etiqueta = (medio[0] + nx * separacion, medio[1] + ny * separacion)
     else:
         ini = _borde((x1, y1), *r1, (x2, y2))
         fin = _borde((x2, y2), *r2, (x1, y1))
@@ -174,9 +175,13 @@ def dibujar_automata(canvas, automata, resaltar_estados=(), resaltar_arista=None
         if origen == destino:
             _bucle(canvas, posiciones[origen], origen, texto, color, grosor)
         else:
-            curva = ((destino, origen) in aristas
-                     or _tapa_otro_estado(posiciones, origen, destino))
-            _flecha(canvas, posiciones, origen, destino, texto, curva, color, grosor)
+            if _tapa_otro_estado(posiciones, origen, destino):
+                desviacion = 130          # rodea el estado del medio y sus bucles
+            elif (destino, origen) in aristas:
+                desviacion = 45           # dos flechas opuestas: se separan
+            else:
+                desviacion = 0            # flecha recta
+            _flecha(canvas, posiciones, origen, destino, texto, desviacion, color, grosor)
 
     for estado in automata["estados"]:
         _estado(canvas, posiciones[estado], estado,

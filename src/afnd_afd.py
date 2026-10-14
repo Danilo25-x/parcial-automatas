@@ -1,14 +1,23 @@
 """Módulo 1: conversión de AFND a AFD (método de subconjuntos)."""
 
-from .modelo import crear_automata, nombre_conjunto
+from .modelo import crear_automata, nombre_conjunto, clausura_epsilon
 
 
 def mover(afnd, conjunto, simbolo):
-    """Unión de los destinos de cada estado del conjunto con ese símbolo."""
+    """Unión de los destinos de cada estado del conjunto con ese símbolo,
+    más la clausura-ε del resultado."""
     destino = set()
     for estado in conjunto:
         destino.update(afnd["transiciones"].get((estado, simbolo), []))
-    return frozenset(destino)
+    return clausura_epsilon(afnd, destino)
+
+
+def _texto_inicial(simple, inicial, orden):
+    """Explica cuál es el estado inicial del AFD (con clausura-ε si hace falta)."""
+    if simple == inicial:
+        return "El estado inicial del AFD es " + nombre_conjunto(inicial, orden)
+    return (f"Clausura-ε de {nombre_conjunto(simple, orden)} = "
+            f"{nombre_conjunto(inicial, orden)}: es el estado inicial del AFD")
 
 
 def convertir_afnd_a_afd(afnd):
@@ -20,7 +29,8 @@ def convertir_afnd_a_afd(afnd):
       afd   -> autómata en el mismo formato del modelo
     """
     orden = {e: i for i, e in enumerate(afnd["estados"])}
-    inicial = frozenset([afnd["inicial"]])
+    simple = frozenset([afnd["inicial"]])
+    inicial = clausura_epsilon(afnd, simple)       # clausura-ε del inicial
     vistos = [inicial]
     pendientes = [inicial]
     tabla, pasos = [], []
@@ -29,8 +39,7 @@ def convertir_afnd_a_afd(afnd):
     pasos.append({
         "conjunto": nombre_conjunto(inicial, orden), "simbolo": None,
         "destino": None,
-        "descripcion": "El estado inicial del AFD es "
-                       + nombre_conjunto(inicial, orden),
+        "descripcion": _texto_inicial(simple, inicial, orden),
     })
 
     while pendientes:

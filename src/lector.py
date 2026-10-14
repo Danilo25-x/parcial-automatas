@@ -1,6 +1,6 @@
 """Convierte el texto del editor en un autómata (con errores claros)."""
 
-from .modelo import crear_automata
+from .modelo import crear_automata, EPS
 
 SIMBOLOS_PROHIBIDOS = set("+*()λ∅ε")
 
@@ -37,10 +37,12 @@ def _leer_transiciones(texto, estados, alfabeto):
         if len(partes) != 3:
             raise ValueError(f"Línea {numero}: escriba 'origen,símbolo,destino'.")
         origen, simbolo, destino = partes
+        if simbolo in ("eps", "epsilon"):          # alias fácil de escribir
+            simbolo = EPS
         for estado in (origen, destino):
             if estado not in estados:
                 raise ValueError(f"Línea {numero}: el estado '{estado}' no existe.")
-        if simbolo not in alfabeto:
+        if simbolo != EPS and simbolo not in alfabeto:
             raise ValueError(f"Línea {numero}: el símbolo '{simbolo}' no está en el alfabeto.")
         destinos = transiciones.setdefault((origen, simbolo), [])
         if destino not in destinos:
