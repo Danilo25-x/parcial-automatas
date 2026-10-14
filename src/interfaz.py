@@ -45,6 +45,11 @@ class PanelGrafo(ttk.LabelFrame):
             dibujar_automata(self.canvas, *self.datos)
 
 
+def acepta_o_rechaza(valor):
+    """Texto para la tabla del verificador."""
+    return "acepta" if valor else "rechaza"
+
+
 def calcular_er(automata):
     """Devuelve (pasos, er) o None si la ER es demasiado grande (avisa al usuario)."""
     try:
@@ -336,9 +341,9 @@ class PestanaVerificador(ttk.Frame):
                 text=f"✘ NO equivalentes: {cantidad} {palabra} en {res['total']} cadenas.",
                 foreground="#b91c1c")
         for cadena, a, b, c in res["diferencias"]:
-            si_no = lambda v: "acepta" if v else "rechaza"
-            self.tabla.insert("", "end", values=(cadena or "(cadena vacía)",
-                                                 si_no(a), si_no(b), si_no(c)))
+            self.tabla.insert("", "end", values=(
+                cadena or "(cadena vacía)", acepta_o_rechaza(a),
+                acepta_o_rechaza(b), acepta_o_rechaza(c)))
 
 
 # ---------- Ventana ----------

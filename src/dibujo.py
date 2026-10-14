@@ -103,7 +103,7 @@ def _tapa_otro_estado(posiciones, origen, destino):
     return False
 
 
-def _bucle(canvas, centro, nombre, texto, color, grosor):
+def _bucle(canvas, centro, texto, color, grosor):
     x, y = centro
     arriba = y - ALTO
     puntos = [x - 14, arriba + 2, x - 28, arriba - 36,
@@ -173,7 +173,7 @@ def dibujar_automata(canvas, automata, resaltar_estados=(), resaltar_arista=None
         grosor = 3 if resaltada else 1.5
         texto = ",".join(simbolos)
         if origen == destino:
-            _bucle(canvas, posiciones[origen], origen, texto, color, grosor)
+            _bucle(canvas, posiciones[origen], texto, color, grosor)
         else:
             if _tapa_otro_estado(posiciones, origen, destino):
                 desviacion = 130          # rodea el estado del medio y sus bucles

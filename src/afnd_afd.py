@@ -12,6 +12,11 @@ def mover(afnd, conjunto, simbolo):
     return clausura_epsilon(afnd, destino)
 
 
+def _tiene_final(afnd, conjunto):
+    """True si el conjunto contiene algún estado final del AFND."""
+    return any(e in afnd["finales"] for e in conjunto)
+
+
 def _texto_inicial(simple, inicial, orden):
     """Explica cuál es el estado inicial del AFD (con clausura-ε si hace falta)."""
     if simple == inicial:
@@ -60,13 +65,11 @@ def convertir_afnd_a_afd(afnd):
                 "conjunto": nombre, "simbolo": simbolo, "destino": nombre_dest,
                 "descripcion": texto + (" (conjunto nuevo)" if es_nuevo else ""),
             })
-        es_final = any(e in afnd["finales"] for e in actual)
-        tabla.append({"conjunto": nombre, "final": es_final,
+        tabla.append({"conjunto": nombre, "final": _tiene_final(afnd, actual),
                       "destinos": destinos_fila})
 
     nombres = [nombre_conjunto(c, orden) for c in vistos]
-    finales = [nombre_conjunto(c, orden) for c in vistos
-               if any(e in afnd["finales"] for e in c)]
+    finales = [nombre_conjunto(c, orden) for c in vistos if _tiene_final(afnd, c)]
     afd = crear_automata(nombres, afnd["alfabeto"], nombres[0], finales,
                          transiciones)
     return tabla, pasos, afd

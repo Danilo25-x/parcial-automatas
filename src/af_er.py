@@ -99,8 +99,8 @@ def estrella(r):
     return "(" + r + ")*"
 
 
-def texto_ecuacion(estado, ecuacion):
-    """Escribe la ecuación en texto, ej.  q0 = a·q1 + b·q2 + λ"""
+def lado_derecho(ecuacion):
+    """Parte derecha de la ecuación en texto, ej.  a·q1 + b·q2 + λ"""
     partes = []
     for variable, coef in ecuacion["terminos"].items():
         if coef == LAMBDA:
@@ -110,14 +110,23 @@ def texto_ecuacion(estado, ecuacion):
             partes.append(c + "·" + variable)
     if ecuacion["const"] is not None:
         partes.append(ecuacion["const"])
-    return f"{estado} = " + (" + ".join(partes) if partes else VACIO)
+    return " + ".join(partes) if partes else VACIO
+
+
+def texto_ecuacion(estado, ecuacion):
+    """Escribe la ecuación completa, ej.  q0 = a·q1 + b·q2 + λ"""
+    return f"{estado} = {lado_derecho(ecuacion)}"
 
 
 # ---------- Planteo, bucle y sustitución ----------
 
 def _plantear(automata, estados):
-    """Crea la ecuación de cada estado a partir de sus transiciones."""
+    """Crea la ecuación de cada estado a partir de sus transiciones.
+
+    Devuelve (ecuaciones, cuentas): cuentas[p] = cuántas transiciones tiene p.
+    """
     ecuaciones = {}
+    cuentas = {}
     for p in estados:
         terminos = {}
         cuenta = 0
@@ -130,13 +139,13 @@ def _plantear(automata, estados):
         es_final = p in automata["finales"]
         ecuaciones[p] = {"terminos": terminos,
                          "const": LAMBDA if es_final else None}
-        ecuaciones[p]["cuenta"] = cuenta
-    return ecuaciones
+        cuentas[p] = cuenta
+    return ecuaciones, cuentas
 
 
-def _regla_de_planteo(ec, estado):
+def _regla_de_planteo(ec, cuenta, estado):
     """Nombre de la regla y explicación para una ecuación recién planteada."""
-    cuenta, final = ec["cuenta"], ec["const"] == LAMBDA
+    final = ec["const"] == LAMBDA
     if cuenta == 0 and final:
         return "Estado final (p = λ)", f"{estado} es final y no tiene salidas."
     if cuenta == 1:
@@ -186,8 +195,8 @@ def _sustituir(ecuaciones, p, pasos, activos):
         _revisar_tamano(ec_q)
         cambiadas.append(q)
     activos.remove(p)
-    texto = (f"Se reemplaza {p} = {texto_ecuacion(p, ec_p).split(' = ', 1)[1]} "
-             f"en: {', '.join(cambiadas) if cambiadas else 'ninguna ecuación'}.")
+    donde = ", ".join(cambiadas) if cambiadas else "ninguna ecuación"
+    texto = f"Se reemplaza {p} = {lado_derecho(ec_p)} en: {donde}."
     pasos.append({
         "regla": "Sustitución",
         "descripcion": texto,
@@ -228,11 +237,11 @@ def afd_a_er(automata):
 
     activos = [e for e in automata["estados"]
                if e in alcanzables and e in con_salida]
-    ecuaciones = _plantear(automata, set(activos))
+    ecuaciones, cuentas = _plantear(automata, set(activos))
 
     # 1) Planteo: una ecuación por estado, con su regla
     for i, p in enumerate(activos):
-        regla, explicacion = _regla_de_planteo(ecuaciones[p], p)
+        regla, explicacion = _regla_de_planteo(ecuaciones[p], cuentas[p], p)
         pasos.append({
             "regla": regla, "descripcion": explicacion,
             "ecuaciones": [texto_ecuacion(q, ecuaciones[q]) for q in activos[:i + 1]],
