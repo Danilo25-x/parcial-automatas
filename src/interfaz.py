@@ -8,6 +8,8 @@ from .af_er import afd_a_er
 from .dibujo import dibujar_automata
 from .ejemplos import EJEMPLOS
 from .lector import leer_afnd, automata_a_textos
+from .paso_a_paso import ControlPasos
+from .pasos import vista_paso
 from .verificador import verificar_equivalencia, contar_cadenas
 
 FUENTE_TEXTO = ("Consolas", 10)
@@ -114,7 +116,9 @@ class PestanaConversion(ttk.Frame):
         marco_tabla = ttk.LabelFrame(abajo, text="Tabla de conversión  (→ inicial, * final)")
         self.tabla = ttk.Treeview(marco_tabla, show="headings", height=6)
         self.tabla.pack(fill="both", expand=True)
-        marco_pasos = ttk.LabelFrame(abajo, text="Pasos")
+        marco_pasos = ttk.LabelFrame(abajo, text="Paso a paso")
+        self.control = ControlPasos(marco_pasos, self.mostrar_paso)
+        self.control.pack(fill="x", pady=2)
         self.zona_pasos, self.texto_pasos = crear_texto(marco_pasos, alto=6)
         self.zona_pasos.pack(fill="both", expand=True)
         abajo.add(marco_tabla, weight=1)
@@ -151,12 +155,20 @@ class PestanaConversion(ttk.Frame):
         self.app.afnd, self.app.afd = afnd, afd
         self.app.tabla, self.app.pasos_conversion = tabla, pasos
         self.panel_afnd.mostrar(afnd)
-        self.panel_afd.mostrar(afd)
         self._llenar_tabla(tabla, afnd["alfabeto"], afd)
-        escribir(self.texto_pasos, "", borrar=True)
-        for numero, paso in enumerate(pasos, start=1):
-            escribir(self.texto_pasos, f"{numero}. {paso['descripcion']}\n")
+        self.control.cargar(len(pasos))      # muestra todo y avisa a mostrar_paso
         return True
+
+    def mostrar_paso(self, k):
+        """Dibuja el AFD hasta el paso k y resalta el conjunto y la flecha actuales."""
+        pasos = self.app.pasos_conversion
+        parcial, resaltados, flecha = vista_paso(self.app.afd, pasos, k)
+        self.panel_afd.mostrar(parcial, resaltados, flecha)
+        escribir(self.texto_pasos, "", borrar=True)
+        for numero, paso in enumerate(pasos[:k + 1], start=1):
+            etiqueta = "regla" if numero == k + 1 else None
+            escribir(self.texto_pasos, f"{numero}. {paso['descripcion']}\n", etiqueta)
+        self.tabla.selection_set(pasos[k]["conjunto"])
 
     def _llenar_tabla(self, tabla, alfabeto, afd):
         columnas = ["estado"] + list(alfabeto)
@@ -171,7 +183,7 @@ class PestanaConversion(ttk.Frame):
             marca = ("→ " if fila["conjunto"] == afd["inicial"] else "") + \
                     ("* " if fila["final"] else "")
             valores = [marca + fila["conjunto"]] + [fila["destinos"][s] for s in alfabeto]
-            self.tabla.insert("", "end", values=valores)
+            self.tabla.insert("", "end", iid=fila["conjunto"], values=valores)
 
 
 # ---------- Pestaña 2: autómata → expresión regular ----------
@@ -198,6 +210,8 @@ class PestanaER(ttk.Frame):
         paneles.pack(fill="both", expand=True, padx=8, pady=(0, 8))
         self.panel = PanelGrafo(paneles, "Autómata")
         marco = ttk.LabelFrame(paneles, text="Sistema de ecuaciones y reglas aplicadas")
+        self.control = ControlPasos(marco, self.mostrar_paso)
+        self.control.pack(fill="x", pady=2)
         self.zona, self.texto = crear_texto(marco, alto=20)
         self.zona.pack(fill="both", expand=True)
         paneles.add(self.panel, weight=1)
@@ -216,13 +230,21 @@ class PestanaER(ttk.Frame):
         self.app.pasos_er, self.app.er = pasos, er
         self.var_er.set(er)
         self.panel.mostrar(automata)
+        self.control.cargar(len(pasos))
+
+    def mostrar_paso(self, k):
+        """Con «Mostrar todo» escribe todos los pasos; si no, solo el paso k."""
+        pasos = self.app.pasos_er
         escribir(self.texto, "", borrar=True)
-        for numero, paso in enumerate(pasos, start=1):
-            escribir(self.texto, f"Paso {numero} · Regla: {paso['regla']}\n", "regla")
+        numeros = range(len(pasos)) if self.control.todo else [k]
+        for i in numeros:
+            paso = pasos[i]
+            escribir(self.texto, f"Paso {i + 1} · Regla: {paso['regla']}\n", "regla")
             escribir(self.texto, f"   {paso['descripcion']}\n")
             for ecuacion in paso["ecuaciones"]:
                 escribir(self.texto, f"      {ecuacion}\n")
             escribir(self.texto, "\n")
+        self.texto.see("1.0" if not self.control.todo else "end")
 
 
 # ---------- Pestaña 3: verificador ----------
