@@ -13,6 +13,11 @@ def generar_cadenas(alfabeto, n):
             yield "".join(letras)
 
 
+def contar_cadenas(alfabeto, n):
+    """Cuántas cadenas hay de longitud 0 hasta n."""
+    return sum(len(alfabeto) ** largo for largo in range(n + 1))
+
+
 def verificar_equivalencia(afnd, afd, er, n=6):
     """Compara los tres reconocedores.
 
