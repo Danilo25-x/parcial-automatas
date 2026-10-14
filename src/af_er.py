@@ -14,6 +14,20 @@ from .modelo import estados_alcanzables, estados_que_llegan_a_final
 
 LAMBDA = "λ"
 VACIO = "∅"
+LIMITE_ER = 20000   # largo máximo de cualquier expresión (evita ER de millones de símbolos)
+
+
+class ERDemasiadoGrande(ValueError):
+    """La ER crece demasiado (pasa con AFD de muchos estados)."""
+
+
+def _revisar_tamano(ecuacion):
+    """Lanza ERDemasiadoGrande si algún coeficiente o constante pasa el límite."""
+    textos = list(ecuacion["terminos"].values()) + [ecuacion["const"] or ""]
+    if any(len(texto) > LIMITE_ER for texto in textos):
+        raise ERDemasiadoGrande(
+            f"La expresión regular supera {LIMITE_ER} caracteres. "
+            "Use un autómata con menos estados.")
 
 
 # ---------- Utilidades para armar expresiones regulares ----------
@@ -146,6 +160,7 @@ def _aplicar_bucle(ecuaciones, p, pasos, activos):
     for variable in ec["terminos"]:
         ec["terminos"][variable] = concatenar(e, ec["terminos"][variable])
     ec["const"] = concatenar(e, ec["const"])
+    _revisar_tamano(ec)
     despues = texto_ecuacion(p, ec)
     pasos.append({
         "regla": regla,
@@ -167,6 +182,7 @@ def _sustituir(ecuaciones, p, pasos, activos):
             nuevo = concatenar(k, coef)
             ec_q["terminos"][variable] = unir(ec_q["terminos"].get(variable), nuevo)
         ec_q["const"] = unir(ec_q["const"], concatenar(k, ec_p["const"]))
+        _revisar_tamano(ec_q)
         cambiadas.append(q)
     activos.remove(p)
     texto = (f"Se reemplaza {p} = {texto_ecuacion(p, ec_p).split(' = ', 1)[1]} "

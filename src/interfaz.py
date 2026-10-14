@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from .afnd_afd import convertir_afnd_a_afd
-from .af_er import afd_a_er
+from .af_er import afd_a_er, ERDemasiadoGrande
 from .dibujo import dibujar_automata
 from .ejemplos import EJEMPLOS
 from .lector import leer_afnd, automata_a_textos
@@ -43,6 +43,15 @@ class PanelGrafo(ttk.LabelFrame):
             self.canvas.delete("all")
         else:
             dibujar_automata(self.canvas, *self.datos)
+
+
+def calcular_er(automata):
+    """Devuelve (pasos, er) o None si la ER es demasiado grande (avisa al usuario)."""
+    try:
+        return afd_a_er(automata)
+    except ERDemasiadoGrande as error:
+        messagebox.showwarning("ER demasiado grande", str(error))
+        return None
 
 
 def crear_texto(padre, alto=8):
@@ -226,7 +235,10 @@ class PestanaER(ttk.Frame):
             automata = self.app.pestana_conversion.leer_editor()
             if automata is None:
                 return
-        pasos, er = afd_a_er(automata)
+        resultado = calcular_er(automata)
+        if resultado is None:
+            return
+        pasos, er = resultado
         self.app.pasos_er, self.app.er = pasos, er
         self.var_er.set(er)
         self.panel.mostrar(automata)
@@ -279,15 +291,19 @@ class PestanaVerificador(ttk.Frame):
     def usar_er_calculada(self):
         if not self.app.pestana_conversion.convertir():
             return
-        _, er = afd_a_er(self.app.afd)
-        self.app.er = er
-        self.var_er.set(er)
+        resultado = calcular_er(self.app.afd)
+        if resultado is None:
+            return
+        self.app.er = resultado[1]
+        self.var_er.set(self.app.er)
 
     def verificar(self):
         if not self.app.pestana_conversion.convertir():
             return
         if not self.var_er.get().strip():
             self.usar_er_calculada()
+            if not self.var_er.get().strip():
+                return
         try:
             n = int(self.n.get())
         except (tk.TclError, ValueError):
